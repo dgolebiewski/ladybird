@@ -2402,6 +2402,24 @@ CSSPixels GridFormattingContext::calculate_min_content_contribution(GridItem con
             return should_treat_width_as_auto(item.box, available_space_for_item);
         return should_treat_height_as_auto(item.box, available_space_for_item);
     }();
+    
+    // NOTE: Not defined in spec, but matches other browsers: a scroll container's min-content
+    //       width contribution is 0 because its content can overflow and scroll horizontally.
+    //       This also applies to the row dimension, but only if height of the grid is not determined 
+    //       by its children, otherwise grids with height:min-content collapse rows to 0.
+    auto should_collapse_min_size = [&]-> bool {
+        if (!item.box->is_scroll_container()) {
+            return false;
+        }
+        
+        if (dimension == GridDimension::Column) {
+            return true;
+        }
+        
+        auto const& containing_block_height = item.box->containing_block()->computed_values().height();
+        
+        return !(containing_block_height.is_min_content() || containing_block_height.is_fit_content() || containing_block_height.is_max_content());
+    };
 
     auto maximum_size = CSSPixels::max();
     if (auto const& css_maximum_size = item.maximum_size(dimension); css_maximum_size.is_length()) {
@@ -2410,11 +2428,7 @@ CSSPixels GridFormattingContext::calculate_min_content_contribution(GridItem con
 
     if (should_treat_preferred_size_as_auto) {
         CSSPixels min_content_size;
-        // NOTE: Not defined in spec, but matches other browsers: a scroll container's min-content
-        //       width contribution is 0 because its content can overflow and scroll horizontally.
-        //       This does NOT apply to the row dimension — scroll containers must still contribute
-        //       their content height, otherwise grids with height:min-content collapse rows to 0.
-        if (dimension == GridDimension::Column && item.box->is_scroll_container()) {
+        if (should_collapse_min_size()) {
             min_content_size = 0;
         } else {
             min_content_size = calculate_min_content_size(item, dimension);

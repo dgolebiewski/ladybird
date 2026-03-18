@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    div {
+        overflow: hidden;
+    }
+
+    #grid {
+        display: grid;
+        grid-template-rows: 1fr;
+    }
+
+    #grid-collapsed {
+        display: grid;
+        grid-template-rows: 0fr;
+    }
+</style>
+</head>
+
+<body>
+    <div id="grid-collapsed"><div>should have 0 height</div></div>
+    <div id="grid">should be at the top of the page</div>
+</body>
+</html>

@@ -1195,22 +1195,27 @@ void TableFormattingContext::position_cell_boxes()
         if (cell_is_anonymous_wrapper_for_flex_or_grid(cell)) {
             cell_state.padding_bottom += row_content_height - cell_state.border_box_height();
         } else if (vertical_align.has<CSS::VerticalAlign>()) {
+            // AD-HOC: For the purpose of aligning the cell vertically to top, bottom or middle - treat cell's height as
+            //         if it was fit-content. This lets us correctly align the cell when it's height is set to a
+            //         percentage value.
+            auto const cell_content_height = calculate_fit_content_height(cell.box, cell_state.available_inner_space_or_constraints_from(*m_available_space)) + cell_state.border_box_top() + cell_state.border_box_bottom();
+
             switch (vertical_align.get<CSS::VerticalAlign>()) {
             // The center of the cell is aligned with the center of the rows it spans.
             case CSS::VerticalAlign::Middle: {
-                auto const height_diff = row_content_height - cell_state.border_box_height();
+                auto const height_diff = row_content_height - cell_content_height;
                 cell_state.padding_top += height_diff / 2;
                 cell_state.padding_bottom += height_diff / 2;
                 break;
             }
             // The top of the cell box is aligned with the top of the first row it spans.
             case CSS::VerticalAlign::Top: {
-                cell_state.padding_bottom += row_content_height - cell_state.border_box_height();
+                cell_state.padding_bottom += row_content_height - cell_content_height;
                 break;
             }
             // The bottom of the cell box is aligned with the bottom of the last row it spans.
             case CSS::VerticalAlign::Bottom: {
-                cell_state.padding_top += row_content_height - cell_state.border_box_height();
+                cell_state.padding_top += row_content_height - cell_content_height;
                 break;
             }
             // These values do not apply to cells; the cell is aligned at the baseline instead.

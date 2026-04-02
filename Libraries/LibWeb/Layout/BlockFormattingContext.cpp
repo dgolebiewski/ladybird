@@ -928,6 +928,13 @@ void BlockFormattingContext::layout_block_level_box(Box const& box, BlockContain
             }
         }
 
+        // Boxes with indefinite width being laid out within contexts with non-indefinite available width inherit
+        // available width of their parent. This prevents those boxes from overflowing horizontally instead of
+        // increasing the height of their parent.
+        if (inner_available_space.width.is_indefinite() && !available_space.width.is_indefinite()) {
+            inner_available_space.width = available_space.width;
+        }
+
         independent_formatting_context->run(inner_available_space);
     } else {
         // This box participates in the current block container's flow.
